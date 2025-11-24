@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
-import { currentUser } from '../data/mockData'; // Import current user to check ownership
+import { useAuth } from '../context/AuthProvider';
 
-const LogCard = ({ log, onDelete }) => {
+const LogCard = ({ log, onDelete, onEdit }) => {
   const [showOptions, setShowOptions] = useState(false);
+  const { user } = useAuth();
 
   if (!log || !log.user) {
     return <div className="log-card error">Invalid log data</div>;
   }
 
   // Check if current user owns this log.
-  const isOwner = log.userId === currentUser.id;
+  // Handle both string IDs (mock) and UUIDs (Supabase)
+  const isOwner = user && (log.userId === user.id || log.userId === user.id?.toString());
 
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this log?')) {
       if (onDelete) onDelete(log.id);
     }
+  };
+
+  const handleEdit = () => {
+    if (onEdit) onEdit(log);
+    setShowOptions(false);
   };
 
   const emojiMap = {
@@ -63,11 +70,12 @@ const LogCard = ({ log, onDelete }) => {
             <span className="visit-type-badge">{log.visitType}</span>
             <span className="log-date">{log.date}</span>
           </div>
-          {isOwner && onDelete && (
+          {isOwner && (
             <div className="options-wrapper">
               <button className="options-btn" onClick={() => setShowOptions(!showOptions)}>⋮</button>
               {showOptions && (
                 <div className="options-menu">
+                  <button className="option-item" onClick={handleEdit}>Edit</button>
                   <button className="option-item delete" onClick={handleDelete}>Delete</button>
                 </div>
               )}

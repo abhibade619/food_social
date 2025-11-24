@@ -17,6 +17,8 @@ function App() {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [userLocation, setUserLocation] = useState("New York, NY");
 
+  const [editingLog, setEditingLog] = useState(null);
+
   // Combine auth user with profile data
   const currentUser = user ? {
     id: user.id,
@@ -47,6 +49,13 @@ function App() {
     setLogs([newLog, ...logs]);
   };
 
+  const handleUpdateLog = (updatedLogData) => {
+    setLogs(logs.map(log =>
+      log.id === editingLog.id ? { ...log, ...updatedLogData } : log
+    ));
+    setEditingLog(null);
+  };
+
   const handleSelectRestaurant = (restaurant) => {
     setSelectedRestaurant(restaurant);
     setCurrentView('restaurant');
@@ -54,6 +63,16 @@ function App() {
 
   const handleDeleteLog = (logId) => {
     setLogs(logs.filter(log => log.id !== logId));
+  };
+
+  const handleEditLog = (log) => {
+    setEditingLog(log);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingLog(null);
   };
 
   if (loading) {
@@ -76,8 +95,8 @@ function App() {
         onUpdateLocation={setUserLocation}
       />
       <main className="container">
-        {currentView === 'feed' && logs && <Feed logs={logs} onDeleteLog={handleDeleteLog} userLocation={userLocation} />}
-        {currentView === 'profile' && currentUser && <Profile user={currentUser} logs={logs || []} onDeleteLog={handleDeleteLog} />}
+        {currentView === 'feed' && logs && <Feed logs={logs} onDeleteLog={handleDeleteLog} onEditLog={handleEditLog} userLocation={userLocation} />}
+        {currentView === 'profile' && currentUser && <Profile user={currentUser} logs={logs || []} onDeleteLog={handleDeleteLog} onEditLog={handleEditLog} />}
         {currentView === 'search' && <Search onSelectRestaurant={handleSelectRestaurant} />}
         {currentView === 'restaurant' && selectedRestaurant && (
           <RestaurantPage
@@ -89,8 +108,9 @@ function App() {
       </main>
       <LogModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddLog}
+        onClose={handleCloseModal}
+        onSubmit={editingLog ? handleUpdateLog : handleAddLog}
+        initialData={editingLog}
       />
       <style>{`
         .loading-screen {

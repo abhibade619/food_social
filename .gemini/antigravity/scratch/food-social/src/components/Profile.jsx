@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LogCard from './LogCard';
+import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthProvider';
 
-const Profile = ({ user, logs, onDeleteLog }) => {
+const Profile = ({ user, logs, onDeleteLog, onEditLog }) => {
+    const { user: currentUser } = useAuth();
     if (!user) return <div className="profile">Loading profile...</div>;
 
     const [activeTab, setActiveTab] = useState('diary'); // 'diary' or 'hitlist'
@@ -9,7 +12,88 @@ const Profile = ({ user, logs, onDeleteLog }) => {
     const [statFilter, setStatFilter] = useState('cuisine'); // 'cuisine' or 'location'
     const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'week', 'month', '90days', 'year'
 
-    const userLogs = logs.filter(log => log.userId === user.id);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followersCount, setFollowersCount] = useState(user.stats?.followers || 0);
+    const [followingCount, setFollowingCount] = useState(user.stats?.following || 0);
+    const [loadingFollow, setLoadingFollow] = useState(false);
+
+    const isOwnProfile = currentUser && (user.id === currentUser.id || user.id === currentUser.id?.toString());
+
+    useEffect(() => {
+        if (!user || !user.id) return;
+
+        const fetchFollowData = async () => {
+            try {
+                // Fetch followers count
+                const { count: followers } = await supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('following_id', user.id);
+
+                if (followers !== null) setFollowersCount(followers);
+
+                // Fetch following count
+                const { count: following } = await supabase
+                    .from('follows')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('follower_id', user.id);
+
+                if (following !== null) setFollowingCount(following);
+
+                // Check if current user is following this profile
+                if (currentUser && !isOwnProfile) {
+                    const { data } = await supabase
+                        .from('follows')
+                        .select('*')
+                        .eq('follower_id', currentUser.id)
+                        .eq('following_id', user.id)
+                        .single();
+
+                    setIsFollowing(!!data);
+                }
+            } catch (error) {
+                console.error('Error fetching follow data:', error);
+            }
+        };
+
+        fetchFollowData();
+    }, [user.id, currentUser, isOwnProfile]);
+
+    const handleFollow = async () => {
+        if (!currentUser || loadingFollow) return;
+        setLoadingFollow(true);
+
+        try {
+            if (isFollowing) {
+                // Unfollow
+                const { error } = await supabase
+                    .from('follows')
+                    .delete()
+                    .eq('follower_id', currentUser.id)
+                    .eq('following_id', user.id);
+
+                if (error) throw error;
+                setIsFollowing(false);
+                setFollowersCount(prev => Math.max(0, prev - 1));
+            } else {
+                // Follow
+                const { error } = await supabase
+                    .from('follows')
+                    .insert([{ follower_id: currentUser.id, following_id: user.id }]);
+
+                if (error) throw error;
+                setIsFollowing(true);
+                setFollowersCount(prev => prev + 1);
+            }
+        } catch (error) {
+            console.error('Error toggling follow:', error);
+            alert('Failed to update follow status');
+        } finally {
+            setLoadingFollow(false);
+        }
+    };
+
+    const userLogs = logs.filter(log => log.userId === user.id || log.userId === user.id?.toString());
 
     // Filter logs by time
     const filteredLogsByTime = userLogs.filter(log => {
@@ -50,10 +134,21 @@ const Profile = ({ user, logs, onDeleteLog }) => {
             <div className="profile-header">
                 <img src={user.avatar} alt={user.name} className="profile-avatar" />
                 <div className="profile-info">
-                    <h1 className="profile-name">{user.name}</h1>
+                    <div className="profile-name-row">
+                        <h1 className="profile-name">{user.name}</h1>
+                        {!isOwnProfile && (
+                            <button
+                                className={`follow-btn ${isFollowing ? 'following' : ''}`}
+                                onClick={handleFollow}
+                                disabled={loadingFollow}
+                            >
+                                {isFollowing ? 'Following' : 'Follow'}
+                            </button>
+                        )}
+                    </div>
                     <p className="profile-handle">{user.handle}</p>
                     <div className="profile-location">
-                        📍 {user.state}, {user.country}
+                        📍 {user.state || 'New York'}, {user.country || 'USA'}
                     </div>
                     <div className="profile-stats">
                         <div className="stat">
@@ -61,11 +156,11 @@ const Profile = ({ user, logs, onDeleteLog }) => {
                             <span className="stat-label">Logs</span>
                         </div>
                         <div className="stat">
-                            <span className="stat-value">{user.stats.followers}</span>
+                            <span className="stat-value">{followersCount}</span>
                             <span className="stat-label">Followers</span>
                         </div>
                         <div className="stat">
-                            <span className="stat-value">{user.stats.following}</span>
+                            <span className="stat-value">{followingCount}</span>
                             <span className="stat-label">Following</span>
                         </div>
                     </div>
@@ -158,7 +253,7 @@ const Profile = ({ user, logs, onDeleteLog }) => {
                         <div className="logs-list">
                             {sortedLogs.length > 0 ? (
                                 sortedLogs.map(log => (
-                                    <LogCard key={log.id} log={log} onDelete={onDeleteLog} />
+                                    <LogCard key={log.id} log={log} onDelete={onDeleteLog} onEdit={onEditLog} />
                                 ))
                             ) : (
                                 <div className="empty-state">No logs yet.</div>
@@ -198,9 +293,37 @@ const Profile = ({ user, logs, onDeleteLog }) => {
           object-fit: cover;
           border: 4px solid var(--bg-secondary);
         }
+        .profile-name-row {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 5px;
+        }
         .profile-name {
           font-size: 2rem;
-          margin-bottom: 5px;
+          margin-bottom: 0;
+        }
+        .follow-btn {
+          background-color: var(--accent-primary);
+          color: white;
+          border: none;
+          padding: 8px 24px;
+          border-radius: 20px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .follow-btn:hover {
+          opacity: 0.9;
+        }
+        .follow-btn.following {
+          background-color: transparent;
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+        }
+        .follow-btn.following:hover {
+          border-color: var(--accent-primary);
+          color: var(--accent-primary);
         }
         .profile-handle {
           color: var(--text-secondary);

@@ -80,3 +80,25 @@ create policy "Tagged users are viewable by everyone."
 create policy "Users can tag others in their logs."
   on tagged_users for insert
   with check ( exists ( select 1 from logs where id = log_id and user_id = auth.uid() ) );
+
+-- Create a table for follows
+create table follows (
+  follower_id uuid references profiles(id) not null,
+  following_id uuid references profiles(id) not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  primary key (follower_id, following_id)
+);
+
+alter table follows enable row level security;
+
+create policy "Follows are viewable by everyone."
+  on follows for select
+  using ( true );
+
+create policy "Users can follow others."
+  on follows for insert
+  with check ( auth.uid() = follower_id );
+
+create policy "Users can unfollow others."
+  on follows for delete
+  using ( auth.uid() = follower_id );

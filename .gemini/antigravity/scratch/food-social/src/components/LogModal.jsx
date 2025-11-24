@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { popularRestaurants } from '../data/restaurants';
 import { calculateInternalScore, mockUsers } from '../data/mockData';
 
-const LogModal = ({ isOpen, onClose, onSubmit }) => {
+const LogModal = ({ isOpen, onClose, onSubmit, initialData }) => {
   const [restaurant, setRestaurant] = useState('');
   const [cuisine, setCuisine] = useState('');
   const [visitType, setVisitType] = useState('Dine In');
@@ -29,6 +29,47 @@ const LogModal = ({ isOpen, onClose, onSubmit }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapperRef = useRef(null);
   const tagWrapperRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setRestaurant(initialData.restaurant || '');
+        setCuisine(initialData.cuisine || '');
+        setVisitType(initialData.visitType || 'Dine In');
+        setDate(initialData.date || new Date().toISOString().split('T')[0]);
+        setRatings(initialData.ratings || {
+          food: 'good',
+          service: 'good',
+          ambience: 'good',
+          value: 'good',
+          packaging: 'good',
+          store_service: 'good',
+          return_intent: 'yes'
+        });
+        setContent(initialData.content || '');
+        setImage(initialData.image || '');
+        setTaggedFriends(initialData.taggedFriends || []);
+      } else {
+        // Reset form for new log
+        setRestaurant('');
+        setCuisine('');
+        setVisitType('Dine In');
+        setDate(new Date().toISOString().split('T')[0]);
+        setRatings({
+          food: 'good',
+          service: 'good',
+          ambience: 'good',
+          value: 'good',
+          packaging: 'good',
+          store_service: 'good',
+          return_intent: 'yes'
+        });
+        setContent('');
+        setImage('');
+        setTaggedFriends([]);
+      }
+    }
+  }, [isOpen, initialData]);
 
   useEffect(() => {
     // Click outside to close suggestions
@@ -113,25 +154,6 @@ const LogModal = ({ isOpen, onClose, onSubmit }) => {
     logData.internalScore = calculateInternalScore(logData);
 
     onSubmit(logData);
-
-    // Reset form
-    setRestaurant('');
-    setCuisine('');
-    setVisitType('Dine In');
-    setDate(new Date().toISOString().split('T')[0]);
-    setRatings({
-      food: 'good',
-      service: 'good',
-      ambience: 'good',
-      value: 'good',
-      packaging: 'good',
-      store_service: 'good',
-      return_intent: 'yes'
-    });
-    setContent('');
-    setImage('');
-    setTaggedFriends([]);
-    setTagQuery('');
     onClose();
   };
 
@@ -171,7 +193,7 @@ const LogModal = ({ isOpen, onClose, onSubmit }) => {
     <div className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h3>Log a Visit</h3>
+          <h3>{initialData ? 'Edit Log' : 'Log a Visit'}</h3>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -308,7 +330,7 @@ const LogModal = ({ isOpen, onClose, onSubmit }) => {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary full-width">Post Log</button>
+          <button type="submit" className="btn btn-primary full-width">{initialData ? 'Update Log' : 'Post Log'}</button>
         </form>
       </div>
       <style>{`

@@ -1,6 +1,6 @@
 import LogCard from './LogCard';
 
-const Feed = ({ logs, onDeleteLog, userLocation }) => {
+const Feed = ({ logs, onDeleteLog, onEditLog, userLocation }) => {
   if (!logs) return <div className="feed-container">Loading feed...</div>;
 
   // Mock trending data
@@ -16,7 +16,7 @@ const Feed = ({ logs, onDeleteLog, userLocation }) => {
         <h2 className="feed-title">Your Feed</h2>
         <div className="feed-list">
           {logs.map(log => (
-            <LogCard key={log.id} log={log} onDelete={onDeleteLog} />
+            <LogCard key={log.id} log={log} onDelete={onDeleteLog} onEdit={onEditLog} />
           ))}
         </div>
       </div>

@@ -12,8 +12,15 @@ export const AuthProvider = ({ children }) => {
     const [profile, setProfile] = useState(null);
 
     useEffect(() => {
+        // Safety timeout to prevent infinite loading
+        const timer = setTimeout(() => {
+            console.warn('Auth loading timed out, forcing render');
+            setLoading(false);
+        }, 2000);
+
         // Check active sessions and sets the user
         supabase.auth.getSession().then(({ data: { session } }) => {
+            clearTimeout(timer);
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
@@ -22,6 +29,7 @@ export const AuthProvider = ({ children }) => {
                 setLoading(false);
             }
         }).catch(error => {
+            clearTimeout(timer);
             console.error('Error getting session:', error);
             setLoading(false);
         });
@@ -38,7 +46,10 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+            clearTimeout(timer);
+        };
     }, []);
 
     const fetchProfile = async (userId) => {
@@ -116,7 +127,7 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {loading ? <div style={{ color: 'white', padding: '20px' }}>Loading application...</div> : children}
         </AuthContext.Provider>
     );
 };
