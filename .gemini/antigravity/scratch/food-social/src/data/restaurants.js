@@ -1,0 +1,22 @@
+export const popularRestaurants = [
+    { id: 'r1', name: 'Joe\'s Pizza', location: 'New York, NY', cuisine: 'Pizza' },
+    { id: 'r2', name: 'Katz\'s Delicatessen', location: 'New York, NY', cuisine: 'Deli' },
+    { id: 'r3', name: 'Peter Luger Steak House', location: 'Brooklyn, NY', cuisine: 'Steakhouse' },
+    { id: 'r4', name: 'Le Bernardin', location: 'New York, NY', cuisine: 'French' },
+    { id: 'r5', name: 'The French Laundry', location: 'Yountville, CA', cuisine: 'French' },
+    { id: 'r6', name: 'Chez Panisse', location: 'Berkeley, CA', cuisine: 'Californian' },
+    { id: 'r7', name: 'Tartine Bakery', location: 'San Francisco, CA', cuisine: 'Bakery' },
+    { id: 'r8', name: 'Franklin Barbecue', location: 'Austin, TX', cuisine: 'Barbecue' },
+    { id: 'r9', name: 'Commander\'s Palace', location: 'New Orleans, LA', cuisine: 'Creole' },
+    { id: 'r10', name: 'Pequod\'s Pizza', location: 'Chicago, IL', cuisine: 'Pizza' },
+    { id: 'r11', name: 'Au Cheval', location: 'Chicago, IL', cuisine: 'American' },
+    { id: 'r12', name: 'Girl & The Goat', location: 'Chicago, IL', cuisine: 'American' },
+    { id: 'r13', name: 'Momofuku Noodle Bar', location: 'New York, NY', cuisine: 'Asian Fusion' },
+    { id: 'r14', name: 'Shake Shack', location: 'New York, NY', cuisine: 'Burgers' },
+    { id: 'r15', name: 'In-N-Out Burger', location: 'Los Angeles, CA', cuisine: 'Burgers' },
+    { id: 'r16', name: 'Nobu', location: 'Malibu, CA', cuisine: 'Japanese' },
+    { id: 'r17', name: 'Bestia', location: 'Los Angeles, CA', cuisine: 'Italian' },
+    { id: 'r18', name: 'Pizzeria Bianco', location: 'Phoenix, AZ', cuisine: 'Pizza' },
+    { id: 'r19', name: 'Zahav', location: 'Philadelphia, PA', cuisine: 'Israeli' },
+    { id: 'r20', name: 'Eleven Madison Park', location: 'New York, NY', cuisine: 'Fine Dining' }
+];
